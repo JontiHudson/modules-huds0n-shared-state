@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "huds0n-shared-state-example",
+    "slug": "huds0n-shared-state-example",
+    "version": "1.0.0",
+    "orientation": "default",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "userInterfaceStyle": "automatic"
+  }
+}
