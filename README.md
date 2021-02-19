@@ -321,6 +321,14 @@ _Now the state will work as normal._
 
 </br>
 
+## 📲 Example <a name = "example"></a>
+
+Clone of fork the repo at [https://github.com/JontiHudson/modules-huds0n-shared-state](https://github.com/JontiHudson/modules-huds0n-shared-state)
+
+Go to the **\_\_example\_\_** folder. Run **npm install** to install the expo project, the **expo start** to launch the example.
+
+</br>
+
 ## ✍️ Authors <a name = "authors"></a>
 
 - [@JontiHudson](https://github.com/JontiHudson) - Idea & Initial work
