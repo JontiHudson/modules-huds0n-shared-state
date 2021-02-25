@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+
 import Screen1 from './Screen1';
 import Screen2 from './Screen2';
 

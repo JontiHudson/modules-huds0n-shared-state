@@ -1,6 +1,6 @@
 </p>
 
-<h2 align="center">@huds0n/error</h3>
+<h2 align="center">@huds0n/shared-state</h3>
 
 </p>
 
@@ -15,7 +15,7 @@
 
 ---
 
-<p align="center"> A simple yet powerful React state management module, fully integrated with hooks and typescript.</br>
+<p align="center">A simple yet powerful React state management module, fully integrated with hooks and typescript.</br>
 <b>Turning</b></br>
 <i>const [state, setState] = useState(initialState);</i></br>
 <b>Into</b></br>
@@ -38,12 +38,13 @@
 - [Advanced Usage](#advanced_usage)
   - [Update Keys](#advanced_update_keys)
   - [State Listeners](#advanced_state_listeners)
-  - [Using Typescript](#advanced_using_typescript)
+  - [Using Typescript](#advanced_typescript)
   - [Data Persist](#advanced_data_persist)
   - [Delayed Initialization](#advanced_delayed_initialization)
 - [Reference](#reference)
   - [Properties](#reference_properties)
   - [Methods](#reference_methods)
+- [Example](#example)
 - [Authors](#authors)
 - [Acknowledgments](#acknowledgement)
 
@@ -323,9 +324,9 @@ _Now the state will work as normal._
 
 ## 📲 Example <a name = "example"></a>
 
-Clone of fork the repo at [https://github.com/JontiHudson/modules-huds0n-shared-state](https://github.com/JontiHudson/modules-huds0n-shared-state)
+Clone or fork the repo at [https://github.com/JontiHudson/modules-huds0n-shared-state](https://github.com/JontiHudson/modules-huds0n-shared-state)
 
-Go to the **\_\_example\_\_** folder. Run **npm install** to install the expo project, the **expo start** to launch the example.
+Go to the **\_\_example\_\_** folder. Run **npm install** to install the expo project, then **expo start** to launch the example.
 
 </br>
 
