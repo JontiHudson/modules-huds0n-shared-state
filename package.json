@@ -1,6 +1,6 @@
 {
   "name": "@huds0n/shared-state",
-  "version": "1.5.0-beta.21",
+  "version": "1.5.1-beta.1",
   "description": "Global State Manager for React Native",
   "main": "./index.js",
   "types": "./index.d.ts",
@@ -21,7 +21,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@huds0n/error": "1.5.0-beta.21"
+    "@huds0n/error": "1.5.1-beta.1"
   },
   "devDependencies": {
     "@types/react": "~16.9.35",
