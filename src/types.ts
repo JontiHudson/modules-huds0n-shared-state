@@ -12,13 +12,9 @@ export type UpdateTesterFn<S extends State> = (
   newState: S,
   prevState: Partial<S>,
 ) => boolean;
-export type SetStateFn<S extends State> = (
-  partialState: Partial<S>,
-  callback?: () => void,
-) => void;
+export type SetStateFn<S extends State> = (partialState: Partial<S>) => void;
 export type SetPropFn<S extends State, K extends keyof S> = (
   value: S[K],
-  callback?: () => void,
 ) => void;
 
 export type CreateStateStoreFunction<S> = (getState: () => S) => StateStore<S>;
@@ -34,6 +30,6 @@ export interface StateStore<S extends State> {
 
 export type RegisterKey = React.Component | Symbol;
 export type UpdateFunction<S extends State> = (
-  updateProps: Partial<S> | true,
-  unregisterIfNotUpdated?: boolean,
+  updateProps?: Partial<S>,
+  rerender?: keyof S | (keyof S)[] | true,
 ) => void;

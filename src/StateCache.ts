@@ -41,6 +41,19 @@ export class StateCache<S extends State> {
   }
 
   reset(resetData: S = deepClone(this.default)) {
-    return this.update(resetData);
+    const updatedState: Partial<S> = {};
+    let updated = false;
+
+    for (const key in this.current) {
+      // @ts-ignore
+      if (this.updateProp(key, resetData[key])) {
+        updatedState[key] = resetData[key];
+        updated = true;
+      }
+    }
+
+    this.current = { ...resetData };
+
+    return updated ? updatedState : null;
   }
 }

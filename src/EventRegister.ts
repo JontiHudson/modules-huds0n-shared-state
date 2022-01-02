@@ -24,11 +24,21 @@ export class EventRegister<S extends State> {
     return () => this.subscribedEvents.delete(triggerArray);
   }
 
-  run(updatedState: Partial<S>) {
+  run(updatedState?: Partial<S>, refreshKey?: keyof S | (keyof S)[] | true) {
     this.subscribedEvents.forEach((callback, trigger) => {
       // @ts-ignore
-      if (Object.keys(updatedState).some((key) => trigger.includes(key))) {
+      if (
+        updatedState &&
+        Object.keys(updatedState).some((key) => trigger.includes(key))
+      ) {
         callback(this.stateCache.current, this.stateCache.prev);
+      }
+
+      if (
+        refreshKey === true ||
+        toArray(refreshKey).some((key) => trigger.includes(key))
+      ) {
+        callback(this.stateCache.current, this.stateCache.current);
       }
     });
   }

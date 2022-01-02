@@ -15,20 +15,29 @@ export class ComponentRegister<S extends State> {
   ) {
     const updateKeysArray = toArray(updateKeys);
 
-    function onUpdate(updatedState: Partial<S> | true) {
+    const onUpdate: UpdateFunction<S> = (updatedState, refresh) => {
       if (
-        updatedState === true ||
         updateKeys === undefined ||
-        Object.keys(updatedState).some((key) => updateKeysArray.includes(key))
+        (updatedState &&
+          Object.keys(updatedState).some((key) =>
+            updateKeysArray.includes(key),
+          )) ||
+        (refresh &&
+          (refresh === true ||
+            toArray(refresh).some((key) => updateKeysArray.includes(key))))
       ) {
         reRenderComponent();
       }
-    }
+    };
 
     this.map.set(registerKey, onUpdate);
   }
 
-  update(updatedState: Partial<S> | true) {
+  refresh(refreshKeys?: keyof S | (keyof S)[]) {
+    this.map.forEach((onUpdate) => onUpdate(undefined, refreshKeys || true));
+  }
+
+  update(updatedState: Partial<S>) {
     this.map.forEach((onUpdate) => onUpdate(updatedState));
   }
 

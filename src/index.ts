@@ -13,9 +13,8 @@ import { StateCache } from './StateCache';
 import * as Types from './types';
 
 export namespace SharedState {
-  export type CreateStateStoreFunction<
-    S extends State
-  > = Types.CreateStateStoreFunction<S>;
+  export type CreateStateStoreFunction<S extends State> =
+    Types.CreateStateStoreFunction<S>;
   export type Options = Types.Options;
   export type ListenerRemoveFn = Types.ListenerRemoveFn;
 
@@ -58,6 +57,7 @@ export class SharedState<S extends SharedState.State> {
     this.initialize = this.initialize.bind(this);
     this.initializeOnMount = this.initializeOnMount.bind(this);
     this.initializeStorage = this.initializeStorage.bind(this);
+    this.load = this.load.bind(this);
     this.refresh = this.refresh.bind(this);
     this.register = this.register.bind(this);
     this.removeAllListeners = this.removeAllListeners.bind(this);
@@ -111,14 +111,20 @@ export class SharedState<S extends SharedState.State> {
     });
   }
 
-  initialize(initialState: S) {
+  initialize(initialState: S, save = true) {
     if (!this._isInitialized) {
       this._stateCache = new StateCache(initialState);
       this._eventRegister = new EventRegister(this._stateCache);
 
-      this._componentRegister.update(true);
+      this._componentRegister.refresh();
 
       this._isInitialized = true;
+
+      if (save && this._stateStore) {
+        this.save();
+      }
+
+      this.debugger(`Initialized State`, { initialState });
     } else {
       this.reset(initialState);
     }
@@ -157,9 +163,14 @@ export class SharedState<S extends SharedState.State> {
     this.setState({ [propName]: newValue });
   }
 
-  refresh() {
+  refresh(refreshKey?: keyof S | (keyof S)[]) {
     try {
-      this._componentRegister.update(true);
+      this._componentRegister.refresh(refreshKey);
+
+      (this._eventRegister || this.throwUninitialized()).run(
+        undefined,
+        refreshKey || true,
+      );
     } catch (error) {
       throw Error.transform(error, {
         name: 'State Error',
@@ -241,15 +252,21 @@ export class SharedState<S extends SharedState.State> {
     shouldUpdate?: SharedState.UpdateTesterFn<S>,
   ): [S, SharedState.SetStateFn<S>] {
     const componentId = Symbol('hook_id');
+    const isMounted = useRef(false);
 
     const [, setReRender] = useStateRN({});
     const reRenderComponent = () => {
       if (!shouldUpdate || shouldUpdate(this.state, this.prevState)) {
-        setReRender({});
+        // Required to stop React Warning: Cannot update a component from inside the function body of a different component
+        setImmediate(() => {
+          // Prevents updating unmounted component
+          isMounted.current && setReRender({});
+        });
       }
     };
 
     useLayoutEffect(() => {
+      isMounted.current = true;
       this._componentRegister.register(
         componentId,
         updateKey,
@@ -258,6 +275,7 @@ export class SharedState<S extends SharedState.State> {
       this.debugger({ registerHook: { componentId, updateKey } });
 
       return () => {
+        isMounted.current = false;
         this._componentRegister.unregister(componentId);
         this.debugger({ unregisterHook: { componentId } });
       };
@@ -275,10 +293,7 @@ export class SharedState<S extends SharedState.State> {
   ): [S[K], SharedState.SetPropFn<S, K>] {
     this.useState(updateKey);
 
-    return [
-      this.state[updateKey],
-      (value, callback) => this.setProp(updateKey, value),
-    ];
+    return [this.state[updateKey], (value) => this.setProp(updateKey, value)];
   }
 
   initializeOnMount(
@@ -303,17 +318,16 @@ export class SharedState<S extends SharedState.State> {
   // STORAGE PERSIST
   async initializeStorage(
     createStore: SharedState.CreateStateStoreFunction<S>,
+    options = { load: true },
   ) {
     this._stateStore = this._stateStore || createStore(() => this.state);
 
-    try {
-      const retrievedState = await this._stateStore.retrieve();
+    this.debugger(`Initialized store ${this._stateStore.storeName}`);
 
-      if (!retrievedState) {
-        return false;
-      }
-      this.initialize(retrievedState);
-      return true;
+    try {
+      if (!options.load) return false;
+
+      return this.load();
     } catch (error) {
       const storageError = Error.transform(error, {
         name: 'State Error',
@@ -328,13 +342,27 @@ export class SharedState<S extends SharedState.State> {
     }
   }
 
-  save() {
+  async load() {
     if (this._stateStore) {
-      this.debugger(`Storing ${this._stateStore.storeName}`);
+      const retrievedState = await this._stateStore.retrieve();
+
+      if (!retrievedState) return false;
+
+      this.initialize(retrievedState, false);
+      return true;
+    }
+    return false;
+  }
+
+  async save() {
+    if (this._stateStore) {
+      this.debugger(`Storing ${this._stateStore.storeName}`, {
+        save: { ...this.state },
+      });
 
       return this._stateStore.save();
     }
-    return Promise.resolve(false);
+    return false;
   }
 
   // DEBUGGING
