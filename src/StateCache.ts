@@ -1,7 +1,7 @@
-import { deepClone } from './helpers';
-import { State } from './types';
+import { deepClone } from "./helpers";
+import type { Types } from "./types";
 
-export class StateCache<S extends State> {
+export class StateCache<S extends Types.State> {
   default: S;
   current: S;
   prev: Partial<S>;

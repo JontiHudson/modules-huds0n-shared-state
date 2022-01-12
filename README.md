@@ -115,8 +115,8 @@ Like regular state, direct mutation will not cause components to update. Instead
 
 ```js
 ExampleState.setState({
-  username: 'john.doe',
-  password: '******',
+  username: "john.doe",
+  password: "******",
 });
 ```
 
@@ -132,7 +132,7 @@ function exampleFunctionComponent() {
 
   // Or if you want to be more specific
 
-  const [username, setUsername] = ExampleState.useProp('username');
+  const [username, setUsername] = ExampleState.useProp("username");
 }
 ```
 
@@ -159,13 +159,13 @@ componentWillUnmount() {
 Registration of a component to a shared state causes automatic re-rendering on any state change. To select specific props to cause re-render an **update key** (string) or **keys** (array of strings) can be passed to the **register** and **useState** methods.
 
 ```js
-ExampleState.register(this, 'username');
+ExampleState.register(this, "username");
 ```
 
 _This class component would only update on username change._
 
 ```js
-Example.useState(['username', 'password']);
+Example.useState(["username", "password"]);
 ```
 
 _This function component would update on either username or password change._
@@ -178,12 +178,12 @@ State changes can be used to trigger logic as well.
 
 ```js
 const removeListener = ExampleState.addListener(
-  ['username'],
   (newState, prevState) => {
     if (prevState.user === null) {
       // Runs when user changes from null
     }
   },
+  ["username"]
 );
 ```
 
@@ -215,110 +215,57 @@ const ExampleState = new SharedState<ExampleStateType>({
 
 <br>
 
-### **Data Persist**<a name="advanced_data_persist"></a>
-
-Due to the varying storage modules available, **Shared State**'s **initializeStorage** accepts a create store function. In this example we will use the store created for React Native's **AsyncStorage**: [@huds0n/shared-state-store-rn](https://github.com/JontiHudson/modules-huds0n-shared-state-store-rn).
-
-```js
-import { createStoreRN } from '@huds0n/shared-state-store-rn';
-
-ExampleState.initializeStorage(createStoreRN({ storeName: 'ExampleState' }));
-```
-
-_This will automatically reset the state from saved data._
-
-```js
-ExampleState.save();
-```
-
-_Now the state will be saved._
-
-<br>
-
-### **Delayed Initialization**<a name="advanced_delayed_initialization"></a>
-
-Sometimes a shared state's **initial state** is unknown until runtime. In these cases _null_ can be passed and the **initialize** method is used later.
-
-```js
-const ExampleState = new SharedState(null);
-```
-
-_At this point trying to access or update state will throw an error._
-
-```js
-ExampleState.initialize({
-  username: 'john.doe',
-  password: '******',
-  ...ect,
-});
-```
-
-_Now the state will work as normal._
-
-<br>
-
 ## 📖 Reference <a name="reference"></a>
 
 ### **Properties**<a name="reference_properties"></a>
 
-| Prop                      | Description                                                                                 | Type                                      |
-| ------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| [state](#basic_accessing) | current state                                                                               | _state **object**_                        |
-| prevState                 | previous state</br>_(**undefined** if no state change yet has occurred)_                    | _state **object**_</br>or _**undefined**_ |
-| isInitialized             | **false** if [delayed initialization](#advanced_delayed_initialization), otherwise **true** | _**boolean**_                             |
+| Prop                      | Description                                                              | Type                                      |
+| ------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
+| [state](#basic_accessing) | current state                                                            | _state **object**_                        |
+| prevState                 | previous state</br>_(**undefined** if no state change yet has occurred)_ | _state **object**_</br>or _**undefined**_ |
 
 </br>
 
 ### **Methods**<a name="reference_methods"></a>
 
-| Methods/_Param_                                             | Description                                                                                                                                                             | Return/_Type_                                                        |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **[addListener](#advanced_state_listeners)**                | **Adds listener to trigger on state changes</br> Returns remove listener function**                                                                                     | **() => boolean**                                                    |
-| _trigger_                                                   | _Defines which state changes the listener triggers on_                                                                                                                  | **_[Update Key](#advanced_update_keys)_**                            |
-| _callback_                                                  | _Called everytime the trigger changes occur_                                                                                                                            | _(current: **State**, prev: **Partial State**) => **void**_          |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **[initialize](#advanced_delayed_initialization)**          | **Used to set the default state for unintialized Shared States**                                                                                                        | -                                                                    |
-| _initialState_                                              | _The initial state_                                                                                                                                                     | _**State**_                                                          |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **initializeOnMount**                                       | **Hook that automatically initializes state on component mount**                                                                                                        | **[State, SetStateFn]**                                              |
-| _initialState_                                              | _The intial state.</br>Like the useState hook, it can calculated on mount using a callback_                                                                             | _**State** or () => **State**_                                       |
-| _updateKey(s) (optional)_                                   | _If present then the component will re-render on key trigger_                                                                                                           | **_[Update Key](#advanced_update_keys)_**                            |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **[initializeStorage](#advanced_data_persist)</br>(async)** | **Resets store to saved data</br>Enables state to be saved using save method</br>Returns true if successful**                                                           | **Promise\<boolean>**                                                |
-| _createStore_                                               | _Plug-in function that integrates state with a specific storage module_                                                                                                 | _**Create Store Function**_                                          |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **refresh**                                                 | **Forces all registered components to re-render**                                                                                                                       | -                                                                    |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **[register](#basic_class)**                                | **Registers class components to re-render on state change</br>Use in either constructor or componentDidMount methods**                                                  | -                                                                    |
-| _component_                                                 | _To link the class component **this** needs to be passed into the function_                                                                                             | _**this**_                                                           |
-| _updateKey(s) (optional)_                                   | _If present then the component will only re-render on key trigger_                                                                                                      | **_[Update Key](#advanced_update_keys)_**                            |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **removeAllListeners**                                      | **Clears all listeners started by the addListener method**                                                                                                              | -                                                                    |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **reset**                                                   | **Resets state back to the default state</br>Deletes or updates stored state depending on reset state**                                                                 | -                                                                    |
-| _resetState (optional)_                                     | _If present, becomes the State's new default state_                                                                                                                     | _**State**_                                                          |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **save (async)**                                            | **Saves the current state to store if initializeStorage has been performed</br>Returns true if successful**                                                             | Promise \<boolean>                                                   |
-|                                                             |                                                                                                                                                                         |
-| **setProp**                                                 | **Update a single property of the state</br>Shallow comparison is used to detect/trigger re-renders**                                                                   | -                                                                    |
-| _propName_                                                  | _Defines which property to update_                                                                                                                                      | _**key of State**_                                                   |
-| _newValue_                                                  | _Property's new value_                                                                                                                                                  | _propType_                                                           |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **[setState](#basic_updating)**                             | **Updates state by combining the newState with the current state</br>Shallow comparison evaluates updated state</br>Updated state triggers re-renders and is returned** | **Partial State**                                                    |
-| _newState_                                                  | _The new state to _                                                                                                                                                     | _**key of State**_                                                   |
-| _newValue_                                                  | _Property's new value_                                                                                                                                                  | _propType_                                                           |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **toString**                                                | Returns the current state in as a JSON string                                                                                                                           | string                                                               |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **[unregister](#basic_class)**                              | **Un-registers class components from re-rendering on state change</br>Use in componentWillMount methods</br>Failure of this will result in memory leaks**               | -                                                                    |
-| _component_                                                 | _To un-link the class component **this** needs to be passed into the function_                                                                                          | _**this**_                                                           |
-|                                                             |                                                                                                                                                                         |
-| **[useProp](#basic_functional)**                            | **Hook to register functional component to State</br>Returns array of prop value and prop setter, similar to useState**                                                 | **[prop, setPropFn]**                                                |
-| _updateKey(s) (optional)_                                   | _If present then the component will only re-render on key trigger_                                                                                                      | **_[Update Key](#advanced_update_keys)_**                            |
-|                                                             |                                                                                                                                                                         |                                                                      |
-| **[useState](#basic_functional)**                           | **Hook to register functional component to State</br>Returns array of state and state setter</br>Allows additional optimization with the shouldUpdate param**           | **[state, setStateFn]**                                              |
-| _updateKey(s) (optional)_                                   | _If present then the component will only re-render on key trigger_                                                                                                      | **_[Update Key](#advanced_update_keys)_**                            |
-| _shouldUpdateFn</br>(optional)_                             | _Run when triggered by State</br>The component will on then update if function return **true**_                                                                         | _(newState: **State**, prevState: **Partial State**) => **boolean**_ |
+| Methods/_Param_                              | Description                                                                                                                                                             | Return/_Type_                                                        |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | --- | --- |
+| **[addListener](#advanced_state_listeners)** | **Adds listener to trigger on state changes</br> Returns remove listener function**                                                                                     | **() => boolean**                                                    |
+| _callback_                                   | _Called everytime the trigger changes occur_                                                                                                                            | _(current: **State**, prev: **Partial State**) => **void**_          |
+| _trigger_ (optional)                         | _Defines which state changes the listener triggers on_                                                                                                                  | **_[Update Key](#advanced_update_keys)_**                            |
+|                                              |                                                                                                                                                                         |                                                                      |     |     |
+| **refresh**                                  | **Forces registered components to re-render**                                                                                                                           | -                                                                    |
+| _refreshKeys_ (optional)                     | _Limits refresh to components registered with specific keys_                                                                                                            | **_[Update Key](#advanced_update_keys)_**                            |
+|                                              |                                                                                                                                                                         |                                                                      |
+| **[register](#basic_class)**                 | **Registers class components to re-render on state change</br>Use in either constructor or componentDidMount methods**                                                  | -                                                                    |
+| _component_                                  | _To link the class component **this** needs to be passed into the function_                                                                                             | _**this**_                                                           |
+| _updateKey(s) (optional)_                    | _If present then the component will only re-render on key trigger_                                                                                                      | **_[Update Key](#advanced_update_keys)_**                            |
+|                                              |                                                                                                                                                                         |                                                                      |
+| **removeAllListeners**                       | **Clears all listeners started by the addListener method**                                                                                                              | -                                                                    |
+|                                              |                                                                                                                                                                         |                                                                      |
+| **reset**                                    | **Resets state back to the default state</br>Deletes or updates stored state depending on reset state**                                                                 | -                                                                    |
+| _resetState (optional)_                      | _If present, becomes the State's new default state_                                                                                                                     | _**State**_                                                          |
+|                                              |                                                                                                                                                                         |                                                                      |
+|                                              |                                                                                                                                                                         |
+| **setProp**                                  | **Update a single property of the state</br>Shallow comparison is used to detect/trigger re-renders**                                                                   | -                                                                    |
+| _propName_                                   | _Defines which property to update_                                                                                                                                      | _**key of State**_                                                   |
+| _newValue_                                   | _Property's new value_                                                                                                                                                  | _propType_                                                           |
+|                                              |                                                                                                                                                                         |                                                                      |
+| **[setState](#basic_updating)**              | **Updates state by combining the newState with the current state</br>Shallow comparison evaluates updated state</br>Updated state triggers re-renders and is returned** | **Partial State**                                                    |
+| _newState_                                   | _The new state to _                                                                                                                                                     | _**key of State**_                                                   |
+| _newValue_                                   | _Property's new value_                                                                                                                                                  | _propType_                                                           |
+|                                              |                                                                                                                                                                         |                                                                      |
+| **toString**                                 | Returns the current state in as a JSON string                                                                                                                           | string                                                               |
+|                                              |                                                                                                                                                                         |                                                                      |
+| **[unregister](#basic_class)**               | **Un-registers class components from re-rendering on state change</br>Use in componentWillMount methods</br>Failure of this will result in memory leaks**               | -                                                                    |
+| _component_                                  | _To un-link the class component **this** needs to be passed into the function_                                                                                          | _**this**_                                                           |
+|                                              |                                                                                                                                                                         |
+| **[useProp](#basic_functional)**             | **Hook to register functional component to State</br>Returns array of prop value and prop setter, similar to useState**                                                 | **[prop, setPropFn]**                                                |
+| _updateKey(s) (optional)_                    | _If present then the component will only re-render on key trigger_                                                                                                      | **_[Update Key](#advanced_update_keys)_**                            |
+|                                              |                                                                                                                                                                         |                                                                      |
+| **[useState](#basic_functional)**            | **Hook to register functional component to State</br>Returns array of state and state setter</br>Allows additional optimization with the shouldUpdate param**           | **[state, setStateFn]**                                              |
+| _updateKey(s) (optional)_                    | _If present then the component will only re-render on key trigger_                                                                                                      | **_[Update Key](#advanced_update_keys)_**                            |
+| _shouldUpdateFn</br>(optional)_              | _Run when triggered by State</br>The component will on then update if function return **true**_                                                                         | _(newState: **State**, prevState: **Partial State**) => **boolean**_ |
 
 </br>
 

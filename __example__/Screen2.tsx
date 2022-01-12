@@ -1,51 +1,74 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { SharedCounterState } from './State';
+import { SharedCounterState } from "./State";
 
-export default function Screen2() {
-  const [localCounter, setLocalCounter] = useState(0);
-  const [sharedCounter, setSharedCounter] = SharedCounterState.useProp(
-    'sharedCounter',
-  );
+export default class Screen2 extends React.Component<
+  {},
+  { localCounter: number }
+> {
+  constructor(props: {}) {
+    super(props);
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.counterContainer}>
-        <Text>Local Counter</Text>
-        <Pressable
-          style={styles.button}
-          onPress={() => setLocalCounter(localCounter + 1)}
-        >
-          <Text>Up</Text>
-        </Pressable>
-        <Text>{localCounter}</Text>
-        <Pressable
-          style={styles.button}
-          onPress={() => setLocalCounter(localCounter - 1)}
-        >
-          <Text>Down</Text>
-        </Pressable>
+    this.state = {
+      localCounter: 0,
+    };
+  }
+
+  componentDidMount() {
+    SharedCounterState.register(this);
+  }
+
+  componentWillUnmount() {
+    SharedCounterState.unregister(this);
+  }
+
+  render() {
+    const { localCounter } = this.state;
+    const { sharedCounter } = SharedCounterState.state;
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.counterContainer}>
+          <Text>Local Counter</Text>
+          <Pressable
+            style={styles.button}
+            onPress={() => this.setState({ localCounter: localCounter + 1 })}
+          >
+            <Text>Up</Text>
+          </Pressable>
+          <Text>{localCounter}</Text>
+          <Pressable
+            style={styles.button}
+            onPress={() => this.setState({ localCounter: localCounter - 1 })}
+          >
+            <Text>Down</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.counterContainer}>
+          <Text>Shared State Counter</Text>
+          <Pressable
+            style={styles.button}
+            onPress={() =>
+              SharedCounterState.setState({ sharedCounter: sharedCounter + 1 })
+            }
+          >
+            <Text>Up</Text>
+          </Pressable>
+          <Text>{sharedCounter}</Text>
+          <Pressable
+            style={styles.button}
+            onPress={() =>
+              SharedCounterState.setState({ sharedCounter: sharedCounter - 1 })
+            }
+          >
+            <Text>Down</Text>
+          </Pressable>
+        </View>
       </View>
-
-      <View style={styles.counterContainer}>
-        <Text>Shared State Counter</Text>
-        <Pressable
-          style={styles.button}
-          onPress={() => setSharedCounter(sharedCounter + 1)}
-        >
-          <Text>Up</Text>
-        </Pressable>
-        <Text>{sharedCounter}</Text>
-        <Pressable
-          style={styles.button}
-          onPress={() => setSharedCounter(sharedCounter - 1)}
-        >
-          <Text>Down</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
+    );
+  }
 }
 
 const styles = StyleSheet.create({
@@ -57,11 +80,11 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   counterContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 });

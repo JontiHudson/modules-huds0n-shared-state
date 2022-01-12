@@ -1,68 +1,38 @@
-import {
-  useMemo,
-  useLayoutEffect,
-  useRef,
-  useState as useStateRN,
-} from 'react';
+import { useLayoutEffect, useRef, useState as useStateRN } from "react";
 
-import Error from '@huds0n/error';
+import Error from "@huds0n/error";
 
-import { ComponentRegister } from './ComponentRegister';
-import { EventRegister } from './EventRegister';
-import { StateCache } from './StateCache';
-import * as Types from './types';
+import { EventRegister } from "./EventRegister";
+import { StateCache } from "./StateCache";
+import type { Types } from "./types";
 
-export namespace SharedState {
-  export type CreateStateStoreFunction<S extends State> =
-    Types.CreateStateStoreFunction<S>;
-  export type Options = Types.Options;
-  export type ListenerRemoveFn = Types.ListenerRemoveFn;
-
-  export type SetStateFn<S extends State> = Types.SetStateFn<S>;
-  export type SetPropFn<S extends State, K extends keyof S> = Types.SetPropFn<
-    S,
-    K
-  >;
-
-  export type State = Types.State;
-  export type UpdateKeys<S extends State> = Types.UpdateKeys<S>;
-  export type UpdateTesterFn<S extends State> = Types.UpdateTesterFn<S>;
-}
-
-export class SharedState<S extends SharedState.State> {
+export class SharedState<S extends Types.State> {
   private _debugLabel: string | undefined;
-  private _componentRegister: ComponentRegister<S>;
-  private _eventRegister: EventRegister<S> | undefined;
-  private _stateCache: StateCache<S> | undefined;
-  private _stateStore: Types.StateStore<S> | undefined;
-  private _isInitialized = false;
+  private _eventRegister: EventRegister<S>;
+  private _stateCache: StateCache<S>;
 
-  constructor(
-    defaultState: S | null = null,
-    options: SharedState.Options = {},
-  ) {
+  private _componentUnregister: symbol;
+  private _componentUpdateId: symbol;
+
+  constructor(defaultState: S, options: Types.Options = {}) {
     const { debugLabel } = options;
 
     this._debugLabel = debugLabel;
-    this._componentRegister = new ComponentRegister();
 
-    if (defaultState) {
-      this.initialize(defaultState);
-    }
+    this._stateCache = new StateCache(defaultState);
+    this._eventRegister = new EventRegister(this._stateCache);
+
+    this._componentUnregister = Symbol("shared_state_component_unregister");
+    this._componentUpdateId = Symbol("shared_state_component_update_id");
 
     this.debugger(this);
 
     this.addListener = this.addListener.bind(this);
     this.debugger = this.debugger.bind(this);
-    this.initialize = this.initialize.bind(this);
-    this.initializeOnMount = this.initializeOnMount.bind(this);
-    this.initializeStorage = this.initializeStorage.bind(this);
-    this.load = this.load.bind(this);
     this.refresh = this.refresh.bind(this);
     this.register = this.register.bind(this);
     this.removeAllListeners = this.removeAllListeners.bind(this);
     this.reset = this.reset.bind(this);
-    this.save = this.save.bind(this);
     this.setProp = this.setProp.bind(this);
     this.setState = this.setState.bind(this);
     this.toString = this.toString.bind(this);
@@ -71,89 +41,50 @@ export class SharedState<S extends SharedState.State> {
     this.useState = this.useState.bind(this);
   }
 
-  private throwUninitialized(): never {
-    throw new Error({
-      name: 'State Error',
-      code: 'UNINITIALIZED_STATE_ERROR',
-      message: 'State has not been initialized.',
-      severity: 'MEDIUM',
-    });
-  }
-
-  get isInitialized() {
-    return this._isInitialized;
-  }
-
   get state() {
-    return (this._stateCache || this.throwUninitialized()).current;
+    return this._stateCache.current;
   }
 
   set state(object) {
     throw new Error({
-      name: 'State Error',
-      code: 'UPDATE_STATE_ERROR',
+      name: "State Error",
+      code: "UPDATE_STATE_ERROR",
       message:
-        'State cannot be mutated directly, use the setState() method instead.',
-      severity: 'MEDIUM',
+        "State cannot be mutated directly, use the setState() method instead.",
+      severity: "MEDIUM",
     });
   }
 
   get prevState() {
-    return (this._stateCache || this.throwUninitialized()).prev;
+    return this._stateCache.prev;
   }
 
   set prevState(object) {
     throw new Error({
-      name: 'State Error',
-      code: 'UPDATE_PREV_STATE_ERROR',
-      message: 'Prev state is read only.',
-      severity: 'MEDIUM',
+      name: "State Error",
+      code: "UPDATE_PREV_STATE_ERROR",
+      message: "Prev state is read only.",
+      severity: "MEDIUM",
     });
-  }
-
-  initialize(initialState: S, save = true) {
-    if (!this._isInitialized) {
-      this._stateCache = new StateCache(initialState);
-      this._eventRegister = new EventRegister(this._stateCache);
-
-      this._componentRegister.refresh();
-
-      this._isInitialized = true;
-
-      if (save && this._stateStore) {
-        this.save();
-      }
-
-      this.debugger(`Initialized State`, { initialState });
-    } else {
-      this.reset(initialState);
-    }
   }
 
   setState(partialState: Partial<S>) {
     try {
-      const updatedState = (
-        this._stateCache || this.throwUninitialized()
-      ).update(partialState);
+      const updatedState = this._stateCache.update(partialState);
 
       // Only send if a change has occured
       if (updatedState) {
-        this._componentRegister.update(updatedState);
-        (this._eventRegister || this.throwUninitialized()).run(updatedState);
+        this._eventRegister.triggerUpdated(updatedState);
         this.debugger({ send: updatedState });
-
-        if (this._stateStore?.saveAutomatically) {
-          this.save();
-        }
       }
 
       return updatedState;
     } catch (error) {
       throw Error.transform(error, {
-        name: 'State Error',
-        code: 'UPDATE_STATE_ERROR',
-        message: 'Update state error',
-        severity: 'HIGH',
+        name: "State Error",
+        code: "UPDATE_STATE_ERROR",
+        message: "Update state error",
+        severity: "HIGH",
       });
     }
   }
@@ -163,48 +94,36 @@ export class SharedState<S extends SharedState.State> {
     this.setState({ [propName]: newValue });
   }
 
-  refresh(refreshKey?: keyof S | (keyof S)[]) {
+  refresh(refreshKey?: Types.UpdateKeys<S>) {
     try {
-      this._componentRegister.refresh(refreshKey);
-
-      (this._eventRegister || this.throwUninitialized()).run(
-        undefined,
-        refreshKey || true,
-      );
+      this._eventRegister.triggerRefresh(refreshKey || true);
     } catch (error) {
       throw Error.transform(error, {
-        name: 'State Error',
-        code: 'REFRESH_STATE_ERROR',
-        message: 'Refresh state error',
-        severity: 'HIGH',
+        name: "State Error",
+        code: "REFRESH_STATE_ERROR",
+        message: "Refresh state error",
+        severity: "HIGH",
       });
     }
   }
 
   reset(resetData?: S) {
     try {
-      const updatedState = (
-        this._stateCache || this.throwUninitialized()
-      ).reset(resetData);
+      const updatedState = this._stateCache.reset(resetData);
 
       if (updatedState) {
-        this._componentRegister.update(updatedState);
-        (this._eventRegister || this.throwUninitialized()).run(updatedState);
-      }
-
-      if (this._stateStore) {
-        resetData ? this._stateStore.save() : this._stateStore.delete();
+        this._eventRegister.triggerUpdated(updatedState);
       }
 
       this.debugger({
-        resetState: (this._stateCache || this.throwUninitialized()).current,
+        resetState: this._stateCache.current,
       });
     } catch (error) {
       throw Error.transform(error, {
-        name: 'State Error',
-        code: 'RESET_STATE_ERROR',
-        message: 'Reset state error',
-        severity: 'HIGH',
+        name: "State Error",
+        code: "RESET_STATE_ERROR",
+        message: "Reset state error",
+        severity: "HIGH",
       });
     }
   }
@@ -212,35 +131,34 @@ export class SharedState<S extends SharedState.State> {
   // EVENT REGISTRATION
 
   addListener(
-    trigger: keyof S | (keyof S)[],
     callback: (current: S, prev: Partial<S>) => void,
+    trigger?: Types.UpdateKeys<S>
   ) {
-    return (this._eventRegister || this.throwUninitialized()).add(
-      trigger,
-      callback,
-    );
+    return this._eventRegister.add(callback, trigger || true);
   }
 
   removeAllListeners() {
-    (this._eventRegister || this.throwUninitialized()).removeAll();
+    this._eventRegister.removeAll();
   }
 
   // CLASS COMPONENT REGISTRATION
 
-  register(component: React.Component, updateKeys?: SharedState.UpdateKeys<S>) {
-    const sharedStateId = Symbol('shared_state_id');
+  register(component: React.Component, updateKeys?: Types.UpdateKeys<S>) {
+    const removeListener = this.addListener(() => {
+      component.setState({
+        [this._componentUpdateId]: Symbol("shared_state_component_updater"),
+      });
+    }, updateKeys);
 
-    function reRenderComponent() {
-      component.setState({ [sharedStateId]: Symbol('shared_state_updater') });
-    }
-
-    this._componentRegister.register(component, updateKeys, reRenderComponent);
+    // @ts-ignore
+    component[this._componentUnregister] = removeListener;
 
     this.debugger({ register: { component, updateKeys } });
   }
 
   unregister(component: React.Component) {
-    this._componentRegister.unregister(component);
+    // @ts-ignore
+    component[this._componentUnregister]?.();
 
     this.debugger({ unregister: { component } });
   }
@@ -248,10 +166,10 @@ export class SharedState<S extends SharedState.State> {
   // FUNCTIONAL COMPONENT REGISTRATION
 
   useState(
-    updateKey?: SharedState.UpdateKeys<S>,
-    shouldUpdate?: SharedState.UpdateTesterFn<S>,
-  ): [S, SharedState.SetStateFn<S>] {
-    const componentId = Symbol('hook_id');
+    updateKeys?: Types.UpdateKeys<S>,
+    shouldUpdate?: Types.ShouldUpdate<S>
+  ): [S, Types.SetState<S>] {
+    // Prevents updating unmounted component
     const isMounted = useRef(false);
 
     const [, setReRender] = useStateRN({});
@@ -259,7 +177,6 @@ export class SharedState<S extends SharedState.State> {
       if (!shouldUpdate || shouldUpdate(this.state, this.prevState)) {
         // Required to stop React Warning: Cannot update a component from inside the function body of a different component
         setImmediate(() => {
-          // Prevents updating unmounted component
           isMounted.current && setReRender({});
         });
       }
@@ -267,17 +184,13 @@ export class SharedState<S extends SharedState.State> {
 
     useLayoutEffect(() => {
       isMounted.current = true;
-      this._componentRegister.register(
-        componentId,
-        updateKey,
-        reRenderComponent,
-      );
-      this.debugger({ registerHook: { componentId, updateKey } });
+
+      const removeListener = this.addListener(reRenderComponent, updateKeys);
+
+      this.debugger({ registerHook: { updateKeys } });
 
       return () => {
-        isMounted.current = false;
-        this._componentRegister.unregister(componentId);
-        this.debugger({ unregisterHook: { componentId } });
+        removeListener();
       };
     }, []);
 
@@ -288,81 +201,10 @@ export class SharedState<S extends SharedState.State> {
     return [this.state, setValue];
   }
 
-  useProp<K extends keyof S>(
-    updateKey: K,
-  ): [S[K], SharedState.SetPropFn<S, K>] {
+  useProp<K extends keyof S>(updateKey: K): [S[K], Types.SetProp<S, K>] {
     this.useState(updateKey);
 
     return [this.state[updateKey], (value) => this.setProp(updateKey, value)];
-  }
-
-  initializeOnMount(
-    initialState: S | (() => S),
-    updateKey?: SharedState.UpdateKeys<S>,
-  ) {
-    const uninitialized = useRef(true);
-
-    const _initialState =
-      typeof initialState === 'function'
-        ? useMemo(initialState as () => S, [])
-        : initialState;
-
-    if (uninitialized.current) {
-      this.initialize(_initialState);
-      uninitialized.current = false;
-    }
-
-    return this.useState(updateKey);
-  }
-
-  // STORAGE PERSIST
-  async initializeStorage(
-    createStore: SharedState.CreateStateStoreFunction<S>,
-    options = { load: true },
-  ) {
-    this._stateStore = this._stateStore || createStore(() => this.state);
-
-    this.debugger(`Initialized store ${this._stateStore.storeName}`);
-
-    try {
-      if (!options.load) return false;
-
-      return this.load();
-    } catch (error) {
-      const storageError = Error.transform(error, {
-        name: 'State Error',
-        code: 'STORAGE_ERROR',
-        message: 'Error loading from storage',
-        severity: 'HIGH',
-      });
-
-      this._isInitialized && this.reset();
-      storageError.handle();
-      return false;
-    }
-  }
-
-  async load() {
-    if (this._stateStore) {
-      const retrievedState = await this._stateStore.retrieve();
-
-      if (!retrievedState) return false;
-
-      this.initialize(retrievedState, false);
-      return true;
-    }
-    return false;
-  }
-
-  async save() {
-    if (this._stateStore) {
-      this.debugger(`Storing ${this._stateStore.storeName}`, {
-        save: { ...this.state },
-      });
-
-      return this._stateStore.save();
-    }
-    return false;
   }
 
   // DEBUGGING
@@ -375,3 +217,5 @@ export class SharedState<S extends SharedState.State> {
     return JSON.stringify(this.state, null, 2);
   }
 }
+
+export type { Types as SharedStateTypes } from "./types";

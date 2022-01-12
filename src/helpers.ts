@@ -1,4 +1,6 @@
-import Error from '@huds0n/error';
+import Error from "@huds0n/error";
+
+export const UPDATE_ALL = Symbol("UPDATE_ALL");
 
 export function toArray<E>(source: undefined | E | E[]): E[] {
   if (source === undefined) return [] as E[];
@@ -16,7 +18,7 @@ export function deepClone<O extends Object>(object: O): O {
         // @ts-ignore
         objectCopy[key] = Object.values(deepClone({ ...value }));
         // @ts-ignore
-      } else if (value?.constructor?.name === 'Object') {
+      } else if (value?.constructor?.name === "Object") {
         // @ts-ignore
         objectCopy[key] = deepClone(value);
       } else {
@@ -29,9 +31,9 @@ export function deepClone<O extends Object>(object: O): O {
     return objectCopy;
   } catch (error) {
     throw Error.transform(error, {
-      code: 'DEEP_CLONE_ERROR',
-      message: 'Unable to deep clone object',
-      severity: 'HIGH',
+      code: "DEEP_CLONE_ERROR",
+      message: "Unable to deep clone object",
+      severity: "HIGH",
     });
   }
 }

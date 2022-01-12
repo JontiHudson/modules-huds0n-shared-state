@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { SharedCounterState } from './State';
+import { SharedCounterState } from "./State";
 
 export default function Screen1() {
   const [localCounter, setLocalCounter] = useState(0);
-  const [
-    sharedCounterState,
-    setSharedCounterState,
-  ] = SharedCounterState.useState('sharedCounter');
+  const [sharedCounterState, setSharedCounterState] =
+    SharedCounterState.useState("sharedCounter");
 
   return (
     <View style={styles.container}>
@@ -66,11 +64,11 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   counterContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 });
