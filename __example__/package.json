@@ -10,14 +10,14 @@
     "publish": "node scripts/publish.js"
   },
   "dependencies": {
-    "@huds0n/shared-state": "1.6.0-beta53",
-    "@huds0n/shared-state-store-rn": "1.6.0-beta53",
+    "@huds0n/shared-state": "1.6.0-beta54",
+    "@huds0n/shared-state-store-rn": "1.6.0-beta54",
     "expo": "^44.0.3",
     "react": "17.0.1",
     "react-native": "0.64.3"
   },
   "private": true,
-  "version": "1.6.0-beta53",
+  "version": "1.6.0-beta54",
   "devDependencies": {
     "@types/react": "^17.0.38",
     "@types/react-native": "^0.66.11",
