@@ -1,10 +1,10 @@
-import { useLayoutEffect, useRef, useState as useStateRN } from "react";
+import { useLayoutEffect, useRef, useState as useStateRN } from 'react';
 
-import Error from "@huds0n/error";
+import { Huds0nError } from '@huds0n/error';
 
-import { EventRegister } from "./EventRegister";
-import { StateCache } from "./StateCache";
-import type { Types } from "./types";
+import { EventRegister } from './EventRegister';
+import { StateCache } from './StateCache';
+import type { Types } from './types';
 
 export class SharedState<S extends Types.State> {
   private _debugLabel: string | undefined;
@@ -22,8 +22,8 @@ export class SharedState<S extends Types.State> {
     this._stateCache = new StateCache(defaultState);
     this._eventRegister = new EventRegister(this._stateCache);
 
-    this._componentUnregister = Symbol("shared_state_component_unregister");
-    this._componentUpdateId = Symbol("shared_state_component_update_id");
+    this._componentUnregister = Symbol('shared_state_component_unregister');
+    this._componentUpdateId = Symbol('shared_state_component_update_id');
 
     this.debugger(this);
 
@@ -46,12 +46,12 @@ export class SharedState<S extends Types.State> {
   }
 
   set state(object) {
-    throw new Error({
-      name: "State Error",
-      code: "UPDATE_STATE_ERROR",
+    throw Huds0nError.create({
+      name: 'State Error',
+      code: 'UPDATE_STATE_ERROR',
       message:
-        "State cannot be mutated directly, use the setState() method instead.",
-      severity: "MEDIUM",
+        'State cannot be mutated directly, use the setState() method instead.',
+      severity: 'WARN',
     });
   }
 
@@ -60,11 +60,11 @@ export class SharedState<S extends Types.State> {
   }
 
   set prevState(object) {
-    throw new Error({
-      name: "State Error",
-      code: "UPDATE_PREV_STATE_ERROR",
-      message: "Prev state is read only.",
-      severity: "MEDIUM",
+    throw Huds0nError.create({
+      name: 'State Error',
+      code: 'UPDATE_PREV_STATE_ERROR',
+      message: 'Prev state is read only.',
+      severity: 'WARN',
     });
   }
 
@@ -80,29 +80,30 @@ export class SharedState<S extends Types.State> {
 
       return updatedState;
     } catch (error) {
-      throw Error.transform(error, {
-        name: "State Error",
-        code: "UPDATE_STATE_ERROR",
-        message: "Update state error",
-        severity: "HIGH",
+      throw Huds0nError.create({
+        name: 'State Error',
+        code: 'UPDATE_STATE_ERROR',
+        message: 'Update state error',
+        severity: 'ERROR',
+        from: error,
       });
     }
   }
 
   setProp<K extends keyof S>(propName: K, newValue: S[K]) {
-    // @ts-ignore
-    this.setState({ [propName]: newValue });
+    this.setState({ [propName]: newValue } as any);
   }
 
   refresh(refreshKey?: Types.UpdateKeys<S>) {
     try {
       this._eventRegister.triggerRefresh(refreshKey || true);
     } catch (error) {
-      throw Error.transform(error, {
-        name: "State Error",
-        code: "REFRESH_STATE_ERROR",
-        message: "Refresh state error",
-        severity: "HIGH",
+      throw Huds0nError.create({
+        name: 'State Error',
+        code: 'REFRESH_STATE_ERROR',
+        message: 'Refresh state error',
+        severity: 'ERROR',
+        from: error,
       });
     }
   }
@@ -119,11 +120,12 @@ export class SharedState<S extends Types.State> {
         resetState: this._stateCache.current,
       });
     } catch (error) {
-      throw Error.transform(error, {
-        name: "State Error",
-        code: "RESET_STATE_ERROR",
-        message: "Reset state error",
-        severity: "HIGH",
+      throw Huds0nError.create({
+        name: 'State Error',
+        code: 'RESET_STATE_ERROR',
+        message: 'Reset state error',
+        severity: 'ERROR',
+        from: error,
       });
     }
   }
@@ -132,7 +134,7 @@ export class SharedState<S extends Types.State> {
 
   addListener(
     callback: (current: S, prev: Partial<S>) => void,
-    trigger?: Types.UpdateKeys<S>
+    trigger?: Types.UpdateKeys<S>,
   ) {
     return this._eventRegister.add(callback, trigger || true);
   }
@@ -146,10 +148,11 @@ export class SharedState<S extends Types.State> {
   register(component: React.Component, updateKeys?: Types.UpdateKeys<S>) {
     const removeListener = this.addListener(() => {
       component.setState({
-        [this._componentUpdateId]: Symbol("shared_state_component_updater"),
+        [this._componentUpdateId]: Symbol('shared_state_component_updater'),
       });
     }, updateKeys);
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     component[this._componentUnregister] = removeListener;
 
@@ -157,6 +160,7 @@ export class SharedState<S extends Types.State> {
   }
 
   unregister(component: React.Component) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     component[this._componentUnregister]?.();
 
@@ -167,7 +171,7 @@ export class SharedState<S extends Types.State> {
 
   useState(
     updateKeys?: Types.UpdateKeys<S>,
-    shouldUpdate?: Types.ShouldUpdate<S>
+    shouldUpdate?: Types.ShouldUpdate<S>,
   ): [S, Types.SetState<S>] {
     // Prevents updating unmounted component
     const isMounted = useRef(false);
@@ -190,6 +194,7 @@ export class SharedState<S extends Types.State> {
       this.debugger({ registerHook: { updateKeys } });
 
       return () => {
+        isMounted.current = false;
         removeListener();
       };
     }, []);
@@ -214,8 +219,8 @@ export class SharedState<S extends Types.State> {
   }
 
   toString() {
-    return JSON.stringify(this.state, null, 2);
+    return JSON.stringify(this.state, undefined, 2);
   }
 }
 
-export type { Types as SharedStateTypes } from "./types";
+export type { Types as SharedStateTypes } from './types';

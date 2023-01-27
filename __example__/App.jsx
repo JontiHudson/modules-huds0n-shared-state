@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tslib_1 = require("tslib");
-const react_1 = (0, tslib_1.__importStar)(require("react"));
+const react_1 = tslib_1.__importStar(require("react"));
 const react_native_1 = require("react-native");
-const Screen1_1 = (0, tslib_1.__importDefault)(require("./Screen1"));
-const Screen2_1 = (0, tslib_1.__importDefault)(require("./Screen2"));
+const Screen1_1 = tslib_1.__importDefault(require("./Screen1"));
+const Screen2_1 = tslib_1.__importDefault(require("./Screen2"));
 function App() {
     const [screen, setScreen] = (0, react_1.useState)(1);
     return (<react_native_1.SafeAreaView style={styles.safeAreaView}>

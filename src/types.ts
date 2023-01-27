@@ -5,16 +5,16 @@ export declare namespace Types {
   export type UpdateKeys<S extends State> = keyof S | (keyof S)[];
   export type OnUpdate<S extends State> = (
     current: S,
-    prev: Partial<S>
+    prev: Partial<S>,
   ) => void;
   export type ListenerRemove = () => boolean;
 
   export type ShouldUpdate<S extends State> = (
     newState: S,
-    prevState: Partial<S>
+    prevState: Partial<S>,
   ) => boolean;
   export type SetState<S extends State> = (partialState: Partial<S>) => void;
   export type SetProp<S extends State, K extends keyof S> = (
-    value: S[K]
+    value: S[K],
   ) => void;
 }

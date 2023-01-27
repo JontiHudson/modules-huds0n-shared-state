@@ -1,5 +1,5 @@
-import { deepClone } from "./helpers";
-import type { Types } from "./types";
+import { deepClone } from './helpers';
+import type { Types } from './types';
 
 export class StateCache<S extends Types.State> {
   default: S;
@@ -17,14 +17,15 @@ export class StateCache<S extends Types.State> {
     let updated = false;
 
     for (const key in partialState) {
-      // @ts-ignore
-      if (this.updateProp(key, partialState[key])) {
-        updatedState[key] = partialState[key];
+      const newValue = partialState[key];
+
+      if (newValue && this.updateProp(key, newValue)) {
+        updatedState[key] = newValue;
         updated = true;
       }
     }
 
-    return updated ? updatedState : null;
+    return updated ? updatedState : undefined;
   }
 
   updateProp<Key extends keyof S>(key: Key, newValue: S[Key]) {
@@ -45,7 +46,6 @@ export class StateCache<S extends Types.State> {
     let updated = false;
 
     for (const key in this.current) {
-      // @ts-ignore
       if (this.updateProp(key, resetData[key])) {
         updatedState[key] = resetData[key];
         updated = true;
@@ -54,6 +54,6 @@ export class StateCache<S extends Types.State> {
 
     this.current = { ...resetData };
 
-    return updated ? updatedState : null;
+    return updated ? updatedState : undefined;
   }
 }

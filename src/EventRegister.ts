@@ -1,11 +1,11 @@
-import { toArray } from "./helpers";
-import { StateCache } from "./StateCache";
-import type { Types } from "./types";
+import { toArray } from './helpers';
+import { StateCache } from './StateCache';
+import type { Types } from './types';
 
 export class EventRegister<S extends Types.State> {
   private stateCache: StateCache<S>;
   private subscribedEvents: Map<
-    (keyof S)[] | Symbol,
+    (keyof S)[] | symbol,
     (current: S, prev: Partial<S>) => void
   >;
 
@@ -16,9 +16,9 @@ export class EventRegister<S extends Types.State> {
 
   add(
     callback: (current: S, prev: Partial<S>) => void,
-    trigger: Types.UpdateKeys<S> | true
+    trigger: Types.UpdateKeys<S> | true,
   ) {
-    const key = trigger === true ? Symbol("UPDATE_ALL") : toArray(trigger);
+    const key = trigger === true ? Symbol('UPDATE_ALL') : toArray(trigger);
     this.subscribedEvents.set(key, callback);
 
     return () => this.subscribedEvents.delete(key);
@@ -28,8 +28,7 @@ export class EventRegister<S extends Types.State> {
     this.subscribedEvents.forEach((callback, trigger) => {
       if (
         updatedState &&
-        (typeof trigger === "symbol" ||
-          // @ts-ignore
+        (typeof trigger === 'symbol' ||
           Object.keys(updatedState).some((key) => trigger.includes(key)))
       ) {
         callback(this.stateCache.current, this.stateCache.prev);
@@ -41,7 +40,7 @@ export class EventRegister<S extends Types.State> {
     this.subscribedEvents.forEach((callback, trigger) => {
       if (
         refreshKey === true ||
-        trigger instanceof Symbol ||
+        typeof trigger === 'symbol' ||
         toArray(refreshKey).some((key) => trigger.includes(key))
       ) {
         callback(this.stateCache.current, this.stateCache.current);
